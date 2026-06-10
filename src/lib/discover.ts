@@ -58,6 +58,7 @@ function toCard(
     userRatingCount: candidate.userRatingCount,
     priceLevel: candidate.priceLevel,
     walkMinutes: candidate.walkMinutes,
+    closesAt: candidate.closesAt,
     dishes: insights.dishes.slice(0, 3),
     dietary,
     whyLine: buildWhyLine(mood, candidate, insights.vibe),

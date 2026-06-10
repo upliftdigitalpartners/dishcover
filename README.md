@@ -66,10 +66,12 @@ npm run lint    # ESLint
 
 1. **Install prompt:** open the deployed URL in Chrome (Android) → ⋮ → *Add to Home screen* shows the Dishcover icon; on iOS Safari → Share → *Add to Home Screen*. Launching from the icon opens standalone (no browser chrome).
 2. **Location flow:** allow location → "Your location" appears. Then in a private tab, deny it → the "Where are you?" text input appears; type a neighborhood and Set.
-3. **Happy path:** pick *Local & authentic* + `$$` → **Find food** → skeleton cards, then 3–5 results, each with rating, price level, walk time, an "Order this" line with prices, a why-line, and a working **Directions** link into Google Maps.
+3. **Happy path:** pick *Local & authentic* + `$$` → **Find food** → skeleton cards, then 3–5 results, each with rating, price level, walk time, a closing time ("Until 11 PM", or an amber "Closes in ~35 min" when it's tight), an "Order this" line with prices, a why-line, a **Share** button (native share sheet), and a working **Directions** link into Google Maps.
 4. **Dietary filter:** select *Halal* (and/or Kosher/Vegetarian/Vegan) → results narrow to matching places, each with a green dietary badge. Deselect to broaden again.
 5. **Just pick one:** tap it → exactly one highlighted card with *Show me others* underneath.
 6. **Auto-widen:** pick *Treat yourself* + `$$$$` on the 10-min walk setting → expect the "Widened search to a 25-min walk" notice.
 7. **Empty state:** pick a contradictory combo (*Treat yourself* + `$`) → friendly "Nothing open matches" message, no blank screen.
 8. **Offline:** turn on airplane mode, relaunch from the home-screen icon → the "You're offline" page appears (production/deployed only).
 9. **Mock banner:** if any key is missing, every result set carries the "Demo data" banner.
+10. **Idle suggestions:** before the first search, the "No idea what you want?" presets appear — tapping one fills the form and searches in one go.
+11. **Install nudge:** after results, a dismissible "Keep Dishcover in your pocket" hint appears (Install button on Android/Chrome; Share → Add to Home Screen steps on iOS). Dismissing it sticks.

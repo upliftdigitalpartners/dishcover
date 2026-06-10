@@ -18,7 +18,8 @@ export function haversineMeters(
 }
 
 export function walkMinutes(distanceMeters: number): number {
-  return Math.max(1, Math.round(distanceMeters / DISCOVERY.walkMetersPerMinute));
+  const routeMeters = distanceMeters * DISCOVERY.walkRouteFactor;
+  return Math.max(1, Math.round(routeMeters / DISCOVERY.walkMetersPerMinute));
 }
 
 export interface RankedCandidate extends Candidate {

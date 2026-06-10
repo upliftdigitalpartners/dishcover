@@ -53,7 +53,7 @@ interface RawPlace {
   rating?: number;
   userRatingCount?: number;
   priceLevel?: string;
-  currentOpeningHours?: { openNow?: boolean };
+  currentOpeningHours?: { openNow?: boolean; nextCloseTime?: string };
   formattedAddress?: string;
   reviews?: { text?: { text?: string }; rating?: number }[];
 }
@@ -100,6 +100,8 @@ function toCandidate(place: RawPlace): Candidate | null {
     primaryType: place.primaryType ?? null,
     // Nearby Search has no openNow request filter — ranking post-filters on this.
     openNow: place.currentOpeningHours?.openNow ?? null,
+    // Already inside the currentOpeningHours field we pay for — no SKU change.
+    closesAt: place.currentOpeningHours?.nextCloseTime ?? null,
     dietary: detectDietary(place.displayName.text, place.types ?? []),
   };
 }

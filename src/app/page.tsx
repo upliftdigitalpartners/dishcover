@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { BudgetPicker } from "@/components/BudgetPicker";
 import { DietaryPicker } from "@/components/DietaryPicker";
 import { DistancePicker } from "@/components/DistancePicker";
+import { IdleSuggestions, type Preset } from "@/components/IdleSuggestions";
+import { InstallNudge } from "@/components/InstallNudge";
 import { LocationField, type LocationStatus } from "@/components/LocationField";
 import { Logo } from "@/components/Logo";
 import { MoodChips } from "@/components/MoodChips";
@@ -90,8 +92,10 @@ export default function Home() {
   }, []);
 
   const find = useCallback(
-    async (mode: ViewMode) => {
-      if (!coords || !mood) return;
+    async (mode: ViewMode, overrides?: { mood?: Mood; budget?: Budget }) => {
+      const effectiveMood = overrides?.mood ?? mood;
+      const effectiveBudget = overrides?.budget ?? budget;
+      if (!coords || !effectiveMood) return;
       setViewMode(mode);
       setPhase("loading");
       setErrorMessage(null);
@@ -99,7 +103,13 @@ export default function Home() {
         const response = await fetch("/api/discover", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...coords, mood, budget, radiusMeters: radius, dietary }),
+          body: JSON.stringify({
+            ...coords,
+            mood: effectiveMood,
+            budget: effectiveBudget,
+            radiusMeters: radius,
+            dietary,
+          }),
         });
         const data = (await response.json().catch(() => ({}))) as DiscoverResult & {
           error?: string;
@@ -128,6 +138,14 @@ export default function Home() {
   const ready = coords !== null && mood !== null;
   const loading = phase === "loading";
   const showOthers = result !== null && result.cards.length > 1;
+
+  const pickPreset = (preset: Preset) => {
+    setMood(preset.mood);
+    setBudget(preset.budget);
+    if (coords) {
+      void find("list", { mood: preset.mood, budget: preset.budget });
+    }
+  };
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pb-16 pt-8">
@@ -200,6 +218,8 @@ export default function Home() {
       </section>
 
       <div ref={resultsRef} aria-live="polite" className="mt-8 space-y-3">
+        {phase === "idle" && <IdleSuggestions onPick={pickPreset} />}
+
         {loading && (
           <>
             <span className="sr-only">Searching for restaurants…</span>
@@ -251,6 +271,8 @@ export default function Home() {
                 ))}
               </>
             )}
+
+            <InstallNudge />
           </>
         )}
       </div>

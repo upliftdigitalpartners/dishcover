@@ -37,6 +37,8 @@ export interface Candidate {
   types: string[];
   primaryType: string | null;
   openNow: boolean | null;
+  /** ISO timestamp of the next closing time, when Google provides it. */
+  closesAt: string | null;
   /** Dietary signals from the provider (place types, name, search match). */
   dietary: Dietary[];
 }
@@ -57,6 +59,7 @@ export interface ResultCardData {
   userRatingCount: number | null;
   priceLevel: Budget | null;
   walkMinutes: number;
+  closesAt: string | null;
   dishes: Dish[];
   dietary: Dietary[];
   whyLine: string;

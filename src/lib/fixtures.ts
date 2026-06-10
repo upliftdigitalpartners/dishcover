@@ -16,6 +16,8 @@ interface Fixture {
   types: string[];
   primaryType: string;
   openNow: boolean;
+  /** Minutes from "now" until closing (null = unknown); makes demos timeless. */
+  closesInMinutes: number | null;
   dietary: Dietary[];
   insights: Insights;
 }
@@ -32,6 +34,7 @@ const FIXTURES: Fixture[] = [
     types: ["mexican_restaurant", "meal_takeaway", "restaurant"],
     primaryType: "mexican_restaurant",
     openNow: true,
+    closesInMinutes: 180,
     dietary: [],
     insights: {
       dishes: [
@@ -54,6 +57,7 @@ const FIXTURES: Fixture[] = [
     types: ["chinese_restaurant", "restaurant"],
     primaryType: "chinese_restaurant",
     openNow: true,
+    closesInMinutes: 240,
     dietary: ["halal"],
     insights: {
       dishes: [
@@ -76,6 +80,7 @@ const FIXTURES: Fixture[] = [
     types: ["thai_restaurant", "restaurant"],
     primaryType: "thai_restaurant",
     openNow: true,
+    closesInMinutes: 150,
     dietary: [],
     insights: {
       dishes: [
@@ -98,6 +103,7 @@ const FIXTURES: Fixture[] = [
     types: ["italian_restaurant", "wine_bar", "restaurant"],
     primaryType: "italian_restaurant",
     openNow: true,
+    closesInMinutes: 200,
     dietary: [],
     insights: {
       dishes: [
@@ -120,6 +126,7 @@ const FIXTURES: Fixture[] = [
     types: ["sushi_restaurant", "japanese_restaurant", "fine_dining_restaurant", "restaurant"],
     primaryType: "sushi_restaurant",
     openNow: true,
+    closesInMinutes: 170,
     dietary: [],
     insights: {
       dishes: [
@@ -141,6 +148,7 @@ const FIXTURES: Fixture[] = [
     types: ["diner", "american_restaurant", "restaurant"],
     primaryType: "diner",
     openNow: true,
+    closesInMinutes: 840,
     dietary: [],
     insights: {
       dishes: [
@@ -163,6 +171,7 @@ const FIXTURES: Fixture[] = [
     types: ["vegetarian_restaurant", "salad_bar", "restaurant"],
     primaryType: "vegetarian_restaurant",
     openNow: true,
+    closesInMinutes: 40,
     dietary: ["vegetarian", "vegan"],
     insights: {
       dishes: [
@@ -185,6 +194,7 @@ const FIXTURES: Fixture[] = [
     types: ["middle_eastern_restaurant", "meal_takeaway", "restaurant"],
     primaryType: "middle_eastern_restaurant",
     openNow: true,
+    closesInMinutes: 600,
     dietary: ["halal"],
     insights: {
       dishes: [
@@ -207,6 +217,7 @@ const FIXTURES: Fixture[] = [
     types: ["deli", "sandwich_shop", "restaurant"],
     primaryType: "deli",
     openNow: true,
+    closesInMinutes: 90,
     dietary: ["kosher"],
     insights: {
       dishes: [
@@ -229,6 +240,7 @@ const FIXTURES: Fixture[] = [
     types: ["fast_food_restaurant", "hamburger_restaurant", "meal_takeaway", "restaurant"],
     primaryType: "fast_food_restaurant",
     openNow: true,
+    closesInMinutes: 300,
     dietary: [],
     insights: {
       dishes: [
@@ -250,6 +262,7 @@ const FIXTURES: Fixture[] = [
     types: ["mexican_restaurant", "restaurant"],
     primaryType: "mexican_restaurant",
     openNow: false, // exercises the open-now filter in demos
+    closesInMinutes: null,
     dietary: [],
     insights: {
       dishes: [
@@ -297,6 +310,10 @@ export function mockNearby(
       types: f.types,
       primaryType: f.primaryType,
       openNow: f.openNow,
+      closesAt:
+        f.closesInMinutes === null
+          ? null
+          : new Date(Date.now() + f.closesInMinutes * 60_000).toISOString(),
       dietary: f.dietary,
     };
   });

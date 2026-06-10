@@ -39,6 +39,7 @@ Nearby Search (≤20 candidates) → mood/budget/rating/dietary filter + weighte
 ## Places API (New) conventions (verified June 2026)
 
 - Nearby Search: `POST /v1/places:searchNearby`. **No `openNow` request filter exists** — request `places.currentOpeningHours` in the field mask and post-filter on `currentOpeningHours.openNow`.
+- `currentOpeningHours.nextCloseTime` (ISO timestamp) powers the "Closes in ~X min" / "Until 10 PM" labels — it rides along in the field we already pay for; no SKU change.
 - Field masks: `X-Goog-FieldMask` header, comma-separated, **no spaces**. Search endpoints prefix fields with `places.`; Place Details uses bare names. Never use `*`.
 - Search mask (Enterprise SKU — do not add fields casually, `reviews` in a search mask is money on fire): `places.id,places.displayName,places.location,places.types,places.primaryType,places.rating,places.userRatingCount,places.priceLevel,places.currentOpeningHours`
 - Reviews come only from `GET /v1/places/{id}` (max 5 returned; text at `reviews[].text.text`), only for top-5 cache misses.

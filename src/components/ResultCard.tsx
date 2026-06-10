@@ -1,10 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import { DietaryBadges } from "@/components/DietaryBadges";
 import type { ResultCardData } from "@/lib/types";
 
 function formatPrice(price: number): string {
   return Number.isInteger(price) ? String(price) : price.toFixed(2);
+}
+
+/** "Closes in ~40 min" inside 75 min, "Until 10:30 PM" otherwise. */
+function closeInfo(closesAt: string | null): { soon: boolean; label: string } | null {
+  if (!closesAt) return null;
+  const minutes = Math.round((Date.parse(closesAt) - Date.now()) / 60_000);
+  if (!Number.isFinite(minutes) || minutes <= 0) return null;
+  if (minutes <= 75) {
+    return { soon: true, label: `Closes in ~${Math.max(5, Math.round(minutes / 5) * 5)} min` };
+  }
+  const time = new Intl.DateTimeFormat(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(closesAt));
+  return { soon: false, label: `Until ${time}` };
 }
 
 interface Props {
@@ -16,6 +32,22 @@ interface Props {
 
 export function ResultCard({ card, highlight = false, index = 0 }: Props) {
   const topDish = card.dishes[0];
+  const closing = closeInfo(card.closesAt);
+
+  // Cards mount client-side only (post-search), so feature detection in the
+  // initializer is hydration-safe.
+  const [canShare] = useState(() => typeof navigator !== "undefined" && "share" in navigator);
+
+  const share = () => {
+    const dishBit = topDish ? ` — order the ${topDish.name}` : "";
+    navigator
+      .share({
+        title: card.name,
+        text: `${card.name}${dishBit} · ${card.walkMinutes} min walk`,
+        url: card.directionsUrl,
+      })
+      .catch(() => {}); // user dismissed the sheet — not an error
+  };
 
   return (
     <article
@@ -46,7 +78,22 @@ export function ResultCard({ card, highlight = false, index = 0 }: Props) {
         )}
         <span aria-hidden>·</span>
         <span className="font-medium text-ink">{card.walkMinutes} min walk</span>
+        {closing && !closing.soon && (
+          <>
+            <span aria-hidden>·</span>
+            <span>{closing.label}</span>
+          </>
+        )}
       </p>
+
+      {closing?.soon && (
+        <p
+          className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary-deep"
+          role="status"
+        >
+          <span aria-hidden>⏰</span> {closing.label}
+        </p>
+      )}
 
       <DietaryBadges dietary={card.dietary} />
 
@@ -78,14 +125,25 @@ export function ResultCard({ card, highlight = false, index = 0 }: Props) {
 
       <p className="mt-3 text-sm text-muted">{card.whyLine}</p>
 
-      <a
-        href={card.directionsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="press mt-3 flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-deep"
-      >
-        <span aria-hidden>🧭</span> Directions
-      </a>
+      <div className="mt-3 flex gap-2">
+        <a
+          href={card.directionsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="press flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-deep"
+        >
+          <span aria-hidden>🧭</span> Directions
+        </a>
+        {canShare && (
+          <button
+            type="button"
+            onClick={share}
+            className="press flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-line bg-card px-4 text-sm font-semibold hover:border-primary"
+          >
+            <span aria-hidden>📤</span> Share
+          </button>
+        )}
+      </div>
     </article>
   );
 }

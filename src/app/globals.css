@@ -75,6 +75,12 @@ body {
   background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
+  /* viewport-fit=cover lets us paint edge-to-edge in standalone mode; these
+     keep content out from under the notch / home indicator. Zero in browsers. */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 /* Result cards enter staggered; --i is set inline per card. */

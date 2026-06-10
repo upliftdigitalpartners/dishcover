@@ -40,6 +40,8 @@ export const DISCOVERY = {
   defaultRadiusMeters: 800, // ~10-min walk
   widenedRadiusMeters: 2000, // ~25-min walk, used by the one auto-widen retry
   walkMetersPerMinute: 80,
+  /** Streets aren't straight lines — multiply haversine distance by this. */
+  walkRouteFactor: 1.25,
   minResults: 3,
   maxResults: 5,
   candidatePoolSize: 20,
