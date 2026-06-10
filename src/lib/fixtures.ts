@@ -1,4 +1,4 @@
-import type { Budget, Candidate, Insights } from "./types";
+import type { Budget, Candidate, Dietary, Insights } from "./types";
 
 /**
  * Mock-mode data: realistic restaurants positioned relative to wherever the
@@ -16,6 +16,7 @@ interface Fixture {
   types: string[];
   primaryType: string;
   openNow: boolean;
+  dietary: Dietary[];
   insights: Insights;
 }
 
@@ -31,6 +32,7 @@ const FIXTURES: Fixture[] = [
     types: ["mexican_restaurant", "meal_takeaway", "restaurant"],
     primaryType: "mexican_restaurant",
     openNow: true,
+    dietary: [],
     insights: {
       dishes: [
         { name: "Birria tacos", price: 9, mentions: 14 },
@@ -38,6 +40,7 @@ const FIXTURES: Fixture[] = [
         { name: "Horchata", price: 4, mentions: 5 },
       ],
       vibe: "no-frills counter slinging the neighborhood's best birria",
+      dietary: [],
     },
   },
   {
@@ -51,6 +54,7 @@ const FIXTURES: Fixture[] = [
     types: ["chinese_restaurant", "restaurant"],
     primaryType: "chinese_restaurant",
     openNow: true,
+    dietary: ["halal"],
     insights: {
       dishes: [
         { name: "Beef noodle soup", price: 12, mentions: 22 },
@@ -58,6 +62,7 @@ const FIXTURES: Fixture[] = [
         { name: "Chive pockets", price: 6, mentions: 6 },
       ],
       vibe: "beloved hole-in-the-wall for hand-pulled noodles",
+      dietary: ["halal"],
     },
   },
   {
@@ -71,6 +76,7 @@ const FIXTURES: Fixture[] = [
     types: ["thai_restaurant", "restaurant"],
     primaryType: "thai_restaurant",
     openNow: true,
+    dietary: [],
     insights: {
       dishes: [
         { name: "Khao soi", price: 11, mentions: 14 },
@@ -78,6 +84,7 @@ const FIXTURES: Fixture[] = [
         { name: "Mango sticky rice", price: 7, mentions: 5 },
       ],
       vibe: "family-run Thai kitchen known for northern specialties",
+      dietary: ["vegetarian"],
     },
   },
   {
@@ -91,6 +98,7 @@ const FIXTURES: Fixture[] = [
     types: ["italian_restaurant", "wine_bar", "restaurant"],
     primaryType: "italian_restaurant",
     openNow: true,
+    dietary: [],
     insights: {
       dishes: [
         { name: "Wood-fired gnocchi", price: 19, mentions: 11 },
@@ -98,6 +106,7 @@ const FIXTURES: Fixture[] = [
         { name: "Tiramisu", price: 9, mentions: 6 },
       ],
       vibe: "candlelit corner spot made for lingering",
+      dietary: [],
     },
   },
   {
@@ -111,12 +120,14 @@ const FIXTURES: Fixture[] = [
     types: ["sushi_restaurant", "japanese_restaurant", "fine_dining_restaurant", "restaurant"],
     primaryType: "sushi_restaurant",
     openNow: true,
+    dietary: [],
     insights: {
       dishes: [
         { name: "Chef's omakase", price: 95, mentions: 19 },
         { name: "Toro hand roll", price: 12, mentions: 4 },
       ],
       vibe: "intimate ten-seat sushi counter",
+      dietary: [],
     },
   },
   {
@@ -130,6 +141,7 @@ const FIXTURES: Fixture[] = [
     types: ["diner", "american_restaurant", "restaurant"],
     primaryType: "diner",
     openNow: true,
+    dietary: [],
     insights: {
       dishes: [
         { name: "Smash burger", price: 10, mentions: 16 },
@@ -137,6 +149,7 @@ const FIXTURES: Fixture[] = [
         { name: "Banana pancakes", price: 9, mentions: 7 },
       ],
       vibe: "24-hour booth-and-counter classic",
+      dietary: [],
     },
   },
   {
@@ -150,6 +163,7 @@ const FIXTURES: Fixture[] = [
     types: ["vegetarian_restaurant", "salad_bar", "restaurant"],
     primaryType: "vegetarian_restaurant",
     openNow: true,
+    dietary: ["vegetarian", "vegan"],
     insights: {
       dishes: [
         { name: "Harvest grain bowl", price: 13, mentions: 9 },
@@ -157,6 +171,51 @@ const FIXTURES: Fixture[] = [
         { name: "Cold-pressed juice", price: 8, mentions: 3 },
       ],
       vibe: "bright counter spot for serious salads",
+      dietary: ["vegetarian", "vegan"],
+    },
+  },
+  {
+    placeId: "mock-saffron-grill",
+    name: "Saffron Halal Grill",
+    bearingDeg: 15,
+    distanceMeters: 300,
+    rating: 4.5,
+    userRatingCount: 620,
+    priceLevel: 1,
+    types: ["middle_eastern_restaurant", "meal_takeaway", "restaurant"],
+    primaryType: "middle_eastern_restaurant",
+    openNow: true,
+    dietary: ["halal"],
+    insights: {
+      dishes: [
+        { name: "Chicken over rice", price: 11, mentions: 18 },
+        { name: "Lamb shawarma", price: 13, mentions: 9 },
+        { name: "Baklava", price: 5, mentions: 4 },
+      ],
+      vibe: "late-night halal cart that earned four walls",
+      dietary: ["halal"],
+    },
+  },
+  {
+    placeId: "mock-beteavon",
+    name: "Beteavon Kosher Deli",
+    bearingDeg: 200,
+    distanceMeters: 550,
+    rating: 4.4,
+    userRatingCount: 389,
+    priceLevel: 2,
+    types: ["deli", "sandwich_shop", "restaurant"],
+    primaryType: "deli",
+    openNow: true,
+    dietary: ["kosher"],
+    insights: {
+      dishes: [
+        { name: "Pastrami on rye", price: 16, mentions: 15 },
+        { name: "Matzo ball soup", price: 9, mentions: 11 },
+        { name: "Black & white cookie", price: 4, mentions: 3 },
+      ],
+      vibe: "old-school kosher deli stacked impossibly high",
+      dietary: ["kosher"],
     },
   },
   {
@@ -170,12 +229,14 @@ const FIXTURES: Fixture[] = [
     types: ["fast_food_restaurant", "hamburger_restaurant", "meal_takeaway", "restaurant"],
     primaryType: "fast_food_restaurant",
     openNow: true,
+    dietary: [],
     insights: {
       dishes: [
         { name: "Big Mac", price: 6, mentions: 3 },
         { name: "Fries", price: 4, mentions: 2 },
       ],
       vibe: "the golden arches, exactly as you know them",
+      dietary: [],
     },
   },
   {
@@ -189,12 +250,14 @@ const FIXTURES: Fixture[] = [
     types: ["mexican_restaurant", "restaurant"],
     primaryType: "mexican_restaurant",
     openNow: false, // exercises the open-now filter in demos
+    dietary: [],
     insights: {
       dishes: [
         { name: "Mole negro", price: 24, mentions: 10 },
         { name: "Mezcal flight", price: 18, mentions: 6 },
       ],
       vibe: "moody mezcaleria with serious Oaxacan cooking",
+      dietary: [],
     },
   },
 ];
@@ -210,9 +273,18 @@ function offsetPosition(lat: number, lng: number, bearingDeg: number, distanceMe
   return { lat: lat + dLat, lng: lng + dLng };
 }
 
-/** Mock equivalent of Places Nearby Search, centered on the caller. */
-export function mockNearby(lat: number, lng: number, radiusMeters: number): Candidate[] {
-  return FIXTURES.filter((f) => f.distanceMeters <= radiusMeters).map((f) => {
+/** Mock equivalent of Places search, centered on the caller. */
+export function mockNearby(
+  lat: number,
+  lng: number,
+  radiusMeters: number,
+  dietary: Dietary[] = [],
+): Candidate[] {
+  return FIXTURES.filter(
+    (f) =>
+      f.distanceMeters <= radiusMeters &&
+      dietary.every((need) => f.dietary.includes(need)),
+  ).map((f) => {
     const pos = offsetPosition(lat, lng, f.bearingDeg, f.distanceMeters);
     return {
       placeId: f.placeId,
@@ -225,6 +297,7 @@ export function mockNearby(lat: number, lng: number, radiusMeters: number): Cand
       types: f.types,
       primaryType: f.primaryType,
       openNow: f.openNow,
+      dietary: f.dietary,
     };
   });
 }
@@ -232,7 +305,7 @@ export function mockNearby(lat: number, lng: number, radiusMeters: number): Cand
 /** Mock equivalent of the insights lookup (store/extraction). */
 export function mockInsights(placeId: string): Insights {
   const fixture = FIXTURES.find((f) => f.placeId === placeId);
-  return fixture ? fixture.insights : { dishes: [], vibe: null };
+  return fixture ? fixture.insights : { dishes: [], vibe: null, dietary: [] };
 }
 
 /** Mock geocode for the "Where are you?" fallback — a fixed demo location. */

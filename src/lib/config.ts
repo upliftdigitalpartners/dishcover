@@ -1,7 +1,9 @@
-import type { Budget, Mood } from "./types";
+import type { Budget, Dietary, Mood } from "./types";
 
 interface MoodConfig {
   label: string;
+  /** Decorative — always rendered aria-hidden. */
+  emoji: string;
   /** Hard filter: candidates below this rating are dropped (null = use baseline). */
   minRating: number | null;
   /** Hard filters on price level (null = no bound). Unknown price always passes. */
@@ -57,6 +59,7 @@ export const DISCOVERY = {
   moods: {
     "quick-bite": {
       label: "Quick bite",
+      emoji: "⚡",
       minRating: null,
       minPriceLevel: null,
       maxPriceLevel: 2,
@@ -69,6 +72,7 @@ export const DISCOVERY = {
     },
     "local-authentic": {
       label: "Local & authentic",
+      emoji: "🥘",
       minRating: 4.3,
       minPriceLevel: null,
       maxPriceLevel: null,
@@ -81,6 +85,7 @@ export const DISCOVERY = {
     },
     "cozy-sit-down": {
       label: "Cozy sit-down",
+      emoji: "🕯️",
       minRating: 4.2,
       minPriceLevel: null,
       maxPriceLevel: null,
@@ -93,6 +98,7 @@ export const DISCOVERY = {
     },
     "treat-yourself": {
       label: "Treat yourself",
+      emoji: "✨",
       minRating: 4.4,
       minPriceLevel: 3,
       maxPriceLevel: null,
@@ -105,6 +111,7 @@ export const DISCOVERY = {
     },
     "late-night": {
       label: "Late night",
+      emoji: "🌙",
       minRating: null,
       minPriceLevel: null,
       maxPriceLevel: null,
@@ -117,6 +124,7 @@ export const DISCOVERY = {
     },
     "light-healthy": {
       label: "Light & healthy",
+      emoji: "🥗",
       minRating: null,
       minPriceLevel: null,
       maxPriceLevel: null,
@@ -171,7 +179,63 @@ export const DISCOVERY = {
 
 export const MOOD_KEYS = Object.keys(DISCOVERY.moods) as Mood[];
 
+interface DietaryConfig {
+  label: string;
+  /** Term injected into the Places Text Search query when this need is active. */
+  searchTerm: string;
+  /** Name substrings that signal this accommodation (lowercase). */
+  keywords: string[];
+  /** Places types that signal this accommodation. */
+  types: string[];
+}
+
+/**
+ * Dietary needs. Real-mode discovery switches to Text Search with these terms
+ * (Google matches halal/kosher/veg from listings + reviews far better than we
+ * can from a name); keywords/types add per-place badge signals on top.
+ */
+export const DIETARY: Record<Dietary, DietaryConfig> = {
+  halal: {
+    label: "Halal",
+    searchTerm: "halal",
+    keywords: ["halal"],
+    types: [],
+  },
+  kosher: {
+    label: "Kosher",
+    searchTerm: "kosher",
+    keywords: ["kosher", "glatt"],
+    types: [],
+  },
+  vegetarian: {
+    label: "Vegetarian",
+    searchTerm: "vegetarian",
+    keywords: ["vegetarian", "veggie", "plant-based", "plant based"],
+    types: ["vegetarian_restaurant", "vegan_restaurant"],
+  },
+  vegan: {
+    label: "Vegan",
+    searchTerm: "vegan",
+    keywords: ["vegan", "plant-based", "plant based"],
+    types: ["vegan_restaurant"],
+  },
+};
+
+export const DIETARY_KEYS = Object.keys(DIETARY) as Dietary[];
+
 export function isKnownChain(name: string): boolean {
   const lower = name.toLowerCase();
   return DISCOVERY.chains.some((chain) => lower.includes(chain));
+}
+
+/** Dietary signals detectable from a place's own name and types. */
+export function detectDietary(name: string, types: string[]): Dietary[] {
+  const lower = name.toLowerCase();
+  return DIETARY_KEYS.filter((key) => {
+    const cfg = DIETARY[key];
+    return (
+      cfg.keywords.some((keyword) => lower.includes(keyword)) ||
+      types.some((type) => cfg.types.includes(type))
+    );
+  });
 }

@@ -6,6 +6,8 @@ export type Mood =
   | "late-night"
   | "light-healthy";
 
+export type Dietary = "halal" | "kosher" | "vegetarian" | "vegan";
+
 /** 1–4 ↔ $–$$$$ (normalized from Places' PRICE_LEVEL_* enum). */
 export type Budget = 1 | 2 | 3 | 4;
 
@@ -19,6 +21,8 @@ export interface Dish {
 export interface Insights {
   dishes: Dish[];
   vibe: string | null;
+  /** Dietary accommodations the reviews clearly support — never guessed. */
+  dietary: Dietary[];
 }
 
 /** A nearby place, normalized — identical shape from the mock and Places providers. */
@@ -33,6 +37,8 @@ export interface Candidate {
   types: string[];
   primaryType: string | null;
   openNow: boolean | null;
+  /** Dietary signals from the provider (place types, name, search match). */
+  dietary: Dietary[];
 }
 
 export interface DiscoverInput {
@@ -41,6 +47,7 @@ export interface DiscoverInput {
   mood: Mood;
   budget: Budget;
   radiusMeters?: number;
+  dietary?: Dietary[];
 }
 
 export interface ResultCardData {
@@ -51,6 +58,7 @@ export interface ResultCardData {
   priceLevel: Budget | null;
   walkMinutes: number;
   dishes: Dish[];
+  dietary: Dietary[];
   whyLine: string;
   directionsUrl: string;
 }

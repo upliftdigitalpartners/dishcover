@@ -1,7 +1,7 @@
-import { DISCOVERY } from "./config";
+import { detectDietary, DIETARY, DISCOVERY } from "./config";
 import { getEnv } from "./env";
 import { fetchWithTimeout } from "./http";
-import type { Budget, Candidate } from "./types";
+import type { Budget, Candidate, Dietary } from "./types";
 
 /**
  * Google Places API (New) client — places.googleapis.com/v1 only.
@@ -100,6 +100,7 @@ function toCandidate(place: RawPlace): Candidate | null {
     primaryType: place.primaryType ?? null,
     // Nearby Search has no openNow request filter — ranking post-filters on this.
     openNow: place.currentOpeningHours?.openNow ?? null,
+    dietary: detectDietary(place.displayName.text, place.types ?? []),
   };
 }
 
@@ -123,6 +124,41 @@ export async function searchNearby(
   return (data.places ?? [])
     .map(toCandidate)
     .filter((c): c is Candidate => c !== null);
+}
+
+/**
+ * Dietary-need discovery via Text Search: the query carries the dietary terms
+ * ("halal restaurants" etc.) so Google's relevance engine — which sees
+ * listings, attributes, and full review history — does the matching. Uses
+ * locationBias (circle), so distance is re-enforced by ranking afterwards;
+ * unlike Nearby Search, openNow is a real request filter here.
+ */
+export async function searchDietary(
+  lat: number,
+  lng: number,
+  radiusMeters: number,
+  dietary: Dietary[],
+): Promise<Candidate[]> {
+  const terms = dietary.map((need) => DIETARY[need].searchTerm).join(" ");
+  const data = (await placesFetch("/places:searchText", NEARBY_FIELD_MASK, {
+    method: "POST",
+    body: {
+      textQuery: `${terms} restaurants`,
+      includedType: "restaurant",
+      openNow: true,
+      pageSize: DISCOVERY.candidatePoolSize,
+      locationBias: {
+        circle: { center: { latitude: lat, longitude: lng }, radius: radiusMeters },
+      },
+    },
+  })) as { places?: RawPlace[] };
+
+  return (data.places ?? [])
+    .map(toCandidate)
+    .filter((c): c is Candidate => c !== null)
+    // The search itself matched these needs; merge so badges stay truthful
+    // even when the name/types alone don't reveal it.
+    .map((c) => ({ ...c, dietary: [...new Set([...c.dietary, ...dietary])] }));
 }
 
 /** Review texts for one place — max 5, Google's relevance order. */

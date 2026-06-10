@@ -2,12 +2,15 @@ import { z } from "zod";
 import { MOOD_KEYS } from "./config";
 import type { Mood } from "./types";
 
+export const dietarySchema = z.enum(["halal", "kosher", "vegetarian", "vegan"]);
+
 export const discoverRequestSchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   mood: z.enum(MOOD_KEYS as [Mood, ...Mood[]]),
   budget: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
   radiusMeters: z.number().min(100).max(3000).optional(),
+  dietary: z.array(dietarySchema).max(4).optional(),
 });
 
 export type DiscoverRequest = z.infer<typeof discoverRequestSchema>;
@@ -33,6 +36,7 @@ export const extractionSchema = z.object({
     .max(8)
     .catch([]),
   vibe: z.string().trim().max(120).nullable().catch(null),
+  dietary: z.array(dietarySchema).max(4).catch([]),
 });
 
 export type Extraction = z.infer<typeof extractionSchema>;
