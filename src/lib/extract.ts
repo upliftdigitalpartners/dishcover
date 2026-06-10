@@ -8,9 +8,10 @@ import type { Insights } from "./types";
  * API (Groq today). Provider-agnostic on purpose: swapping providers means
  * changing BASE_URL + key + model here and nowhere else.
  *
- * Contract: NEVER throws. Any failure — HTTP, timeout, rate limit, JSON parse,
- * schema validation — degrades to { dishes: [], vibe: null } so a card simply
- * renders without an "Order this" section.
+ * Contract: NEVER throws. Returns null on any failure — HTTP, timeout, rate
+ * limit, JSON parse, schema validation — so the store can tell "call failed"
+ * (don't cache, fall back to stale) from "reviews genuinely name no dishes"
+ * (cache the empty result). Callers render a card without "Order this" either way.
  */
 
 const BASE_URL = "https://api.groq.com/openai/v1";
@@ -34,10 +35,10 @@ Rules:
 export async function extractDishes(
   restaurantName: string,
   reviews: string[],
-): Promise<Insights> {
+): Promise<Insights | null> {
   const usable = reviews.map((r) => r.trim()).filter(Boolean);
   if (usable.length === 0) {
-    return { dishes: [], vibe: null };
+    return { dishes: [], vibe: null }; // a true negative, safe to cache
   }
 
   const reviewBlock = usable
@@ -73,7 +74,7 @@ export async function extractDishes(
 
     if (!response.ok) {
       console.warn(`extractDishes: ${restaurantName} → HTTP ${response.status}`);
-      return { dishes: [], vibe: null };
+      return null;
     }
 
     const data = (await response.json()) as {
@@ -81,7 +82,7 @@ export async function extractDishes(
     };
     const content = data.choices?.[0]?.message?.content;
     if (!content) {
-      return { dishes: [], vibe: null };
+      return null;
     }
 
     const parsed = extractionSchema.parse(JSON.parse(content));
@@ -101,6 +102,6 @@ export async function extractDishes(
     return { dishes, vibe: parsed.vibe };
   } catch (error) {
     console.warn(`extractDishes: ${restaurantName} →`, error);
-    return { dishes: [], vibe: null };
+    return null;
   }
 }

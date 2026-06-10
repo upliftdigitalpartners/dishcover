@@ -1,8 +1,8 @@
 import { DISCOVERY } from "./config";
 import { isMockMode } from "./env";
 import { MOCK_LOCATION, mockInsights, mockNearby } from "./fixtures";
-import { extractDishes } from "./extract";
-import { fetchReviews, geocodeText, searchNearby } from "./places";
+import { getStoredInsights } from "./insights";
+import { geocodeText, searchNearby } from "./places";
 import { buildWhyLine, directionsUrl, rankCandidates, type RankedCandidate } from "./rank";
 import type {
   Candidate,
@@ -29,8 +29,7 @@ async function getInsights(candidate: Candidate): Promise<Insights> {
   if (isMockMode()) {
     return mockInsights(candidate.placeId);
   }
-  const reviews = await fetchReviews(candidate.placeId);
-  return extractDishes(candidate.name, reviews);
+  return getStoredInsights(candidate);
 }
 
 function toCard(candidate: RankedCandidate, insights: Insights, mood: DiscoverInput["mood"]): ResultCardData {
