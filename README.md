@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dishcover 🍽️
 
-## Getting Started
+A mobile-first PWA for travelers standing hungry in an unfamiliar city. Pick a **mood** and a **budget** — get **3–5 nearby restaurants** with the **dishes people actually rave about, with prices** — and decide in under 30 seconds.
 
-First, run the development server:
+Answer engine, not search engine: Dishcover reads the reviews so you don't have to. Under each restaurant it shows *"Order this: birria tacos ($9) · pad thai ($12)"*, extracted from real review text.
+
+## Try it with zero keys
+
+The app runs in **mock mode** out of the box — no API keys needed. It serves ~8 realistic fixture restaurants with a "demo data" banner so you can exercise the entire UI.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000, allow (or deny) location, pick a mood, hit **Find food**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Real-data setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy the env template and fill in keys as you create them — the app automatically leaves mock mode once **all** required keys are present:
 
-## Learn More
+```bash
+cp .env.example .env.local
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 1. Google Places API (New)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. In [Google Cloud Console](https://console.cloud.google.com/), create (or pick) a project with billing enabled.
+2. **APIs & Services → Library →** enable **“Places API (New)”** — the one labeled *(New)*; the legacy "Places API" will not work.
+3. **APIs & Services → Credentials → Create credentials → API key.** Restrict the key to the Places API (New).
+4. Put it in `.env.local` as `GOOGLE_PLACES_API_KEY`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Cost notes: the app uses tight field masks (Nearby Search bills Enterprise, ~$35/1k; review fetches happen only for top-5 places missing from the insights store, ~$25/1k) and Google's free monthly call allowances cover light use.
 
-## Deploy on Vercel
+### 2. Groq
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Create a key at [console.groq.com](https://console.groq.com/) → API Keys.
+2. Set `GROQ_API_KEY`. Leave `GROQ_MODEL=llama-3.3-70b-versatile` (free tier: ~1,000 requests/day — plenty, since each restaurant is extracted at most once per 30 days thanks to the insights store).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 3. Supabase
+
+1. Create a project at [supabase.com](https://supabase.com/).
+2. **SQL Editor →** paste and run the contents of [supabase/migrations/001_place_insights.sql](supabase/migrations/001_place_insights.sql).
+3. **Settings → API:** copy the **Project URL** into `SUPABASE_URL` and the **service_role** key (not the anon key) into `SUPABASE_SERVICE_ROLE_KEY`.
+
+All keys are server-side only and never reach the browser.
+
+## Local development
+
+```bash
+npm run dev     # dev server (service worker disabled in dev)
+npm run build   # production build + type check
+npm run start   # serve the production build (service worker active)
+npm run lint    # ESLint
+```
+
+## Deploy to Vercel
+
+1. Push the repo to GitHub and import it in Vercel (defaults are fine — Next.js is auto-detected).
+2. **Project → Settings → Environment Variables:** add `GOOGLE_PLACES_API_KEY`, `GROQ_API_KEY`, `GROQ_MODEL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` for Production (and Preview if you want real data there). Missing keys = mock mode, deliberately.
+3. Deploy. No `maxDuration` config is needed — the discover route finishes in a few seconds and Vercel's default function duration is generous.
+
+## Manual test checklist (on your phone)
+
+1. **Install prompt:** open the deployed URL in Chrome (Android) → ⋮ → *Add to Home screen* shows the Dishcover icon; on iOS Safari → Share → *Add to Home Screen*. Launching from the icon opens standalone (no browser chrome).
+2. **Location flow:** allow location → "Your location" appears. Then in a private tab, deny it → the "Where are you?" text input appears; type a neighborhood and Set.
+3. **Happy path:** pick *Local & authentic* + `$$` → **Find food** → skeleton cards, then 3–5 results, each with rating, price level, walk time, an "Order this" line with prices, a why-line, and a working **Directions** link into Google Maps.
+4. **Just pick one:** tap it → exactly one highlighted card with *Show me others* underneath.
+5. **Auto-widen:** pick *Treat yourself* + `$$$$` on the 10-min walk setting → expect the "Widened search to a 25-min walk" notice.
+6. **Empty state:** pick a contradictory combo (*Treat yourself* + `$`) → friendly "Nothing open matches" message, no blank screen.
+7. **Offline:** turn on airplane mode, relaunch from the home-screen icon → the "You're offline" page appears (production/deployed only).
+8. **Mock banner:** if any key is missing, every result set carries the "Demo data" banner.
