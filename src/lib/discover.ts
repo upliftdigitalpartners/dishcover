@@ -1,6 +1,7 @@
 import { DISCOVERY } from "./config";
 import { isMockMode } from "./env";
 import { MOCK_LOCATION, mockInsights, mockNearby } from "./fixtures";
+import { geocodeText, searchNearby } from "./places";
 import { buildWhyLine, directionsUrl, rankCandidates, type RankedCandidate } from "./rank";
 import type {
   Candidate,
@@ -11,13 +12,12 @@ import type {
   ResultCardData,
 } from "./types";
 
-/** Provider seam: mock fixtures today, Places Nearby Search in the real path. */
+/** Provider seam: Places Nearby Search, or fixtures when keys are missing. */
 async function getCandidates(lat: number, lng: number, radiusMeters: number): Promise<Candidate[]> {
   if (isMockMode()) {
     return mockNearby(lat, lng, radiusMeters);
   }
-  // Real provider lands in the Places slice.
-  return [];
+  return searchNearby(lat, lng, radiusMeters);
 }
 
 /**
@@ -99,6 +99,9 @@ export async function geocode(query: string): Promise<GeocodeResult> {
   if (isMockMode()) {
     return { ...MOCK_LOCATION, mock: true };
   }
-  // Real geocoding (Places Text Search) lands in the Places slice.
-  throw new Error(`Geocoding not yet wired for query: ${query}`);
+  const located = await geocodeText(query);
+  if (!located) {
+    throw new Error(`No geocode result for query: ${query}`);
+  }
+  return { ...located, mock: false };
 }
