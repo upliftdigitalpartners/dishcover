@@ -21,12 +21,15 @@ export function MoodChips({ value, onChange }: Props) {
               type="button"
               aria-pressed={selected}
               onClick={() => onChange(mood)}
-              className={`min-h-11 rounded-full border px-4 text-sm font-medium transition-colors ${
+              className={`press flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium ${
                 selected
-                  ? "border-primary bg-primary text-white"
+                  ? "border-primary bg-primary text-white shadow-sm"
                   : "border-line bg-card text-ink hover:border-primary"
               }`}
             >
+              <span aria-hidden className="text-base leading-none">
+                {DISCOVERY.moods[mood].emoji}
+              </span>
               {DISCOVERY.moods[mood].label}
             </button>
           );

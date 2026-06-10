@@ -23,9 +23,9 @@ export function BudgetPicker({ value, onChange }: Props) {
               aria-pressed={selected}
               aria-label={`Budget level ${budget} of 4`}
               onClick={() => onChange(budget)}
-              className={`min-h-11 rounded-xl border text-sm font-semibold transition-colors ${
+              className={`press min-h-11 rounded-xl border text-sm font-semibold ${
                 selected
-                  ? "border-primary bg-primary text-white"
+                  ? "border-primary bg-primary text-white shadow-sm"
                   : "border-line bg-card text-ink hover:border-primary"
               }`}
             >

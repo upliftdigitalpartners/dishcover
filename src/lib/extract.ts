@@ -23,14 +23,15 @@ const MAX_REVIEW_CHARS = 900; // per review; Places returns at most 5
 const SYSTEM_PROMPT = `You extract dish intelligence from restaurant reviews. Respond with nothing but a single JSON object — no prose, no markdown.
 
 The JSON object must have exactly this shape:
-{"dishes": [{"name": string, "price": number | null, "mentions": number}], "vibe": string | null}
+{"dishes": [{"name": string, "price": number | null, "mentions": number}], "vibe": string | null, "dietary": string[]}
 
 Rules:
 - "dishes": specific dishes or drinks reviewers genuinely praise, best first, at most 5. Skip generic mentions ("the food", "everything").
 - "price": the price a reviewer states for that dish, as a plain number without currency symbols; null if no price is mentioned.
 - "mentions": how many of the provided reviews mention the dish (an integer, at least 1).
 - "vibe": one short lowercase phrase (under 90 characters) capturing the place's character, e.g. "beloved hole-in-the-wall for hand-pulled noodles"; null if the reviews don't make it clear.
-- If no specific dishes are praised, return {"dishes": [], "vibe": ...}.`;
+- "dietary": a subset of ["halal","kosher","vegetarian","vegan"]. Include a value ONLY when the reviews explicitly and confidently state that accommodation (e.g. a reviewer says "fully halal" or "great vegan options"). Never infer it from cuisine alone — an empty array is the correct, safe answer when unsure. This drives a trust badge, so false positives are harmful.
+- If no specific dishes are praised, return {"dishes": [], "vibe": ..., "dietary": [...]}.`;
 
 export async function extractDishes(
   restaurantName: string,
@@ -38,7 +39,7 @@ export async function extractDishes(
 ): Promise<Insights | null> {
   const usable = reviews.map((r) => r.trim()).filter(Boolean);
   if (usable.length === 0) {
-    return { dishes: [], vibe: null }; // a true negative, safe to cache
+    return { dishes: [], vibe: null, dietary: [] }; // a true negative, safe to cache
   }
 
   const reviewBlock = usable
@@ -99,7 +100,7 @@ export async function extractDishes(
       .sort((a, b) => b.mentions - a.mentions)
       .slice(0, 5);
 
-    return { dishes, vibe: parsed.vibe };
+    return { dishes, vibe: parsed.vibe, dietary: parsed.dietary };
   } catch (error) {
     console.warn(`extractDishes: ${restaurantName} →`, error);
     return null;

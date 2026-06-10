@@ -1,15 +1,67 @@
 @import "tailwindcss";
 
 @theme {
-  --color-cream: #fff9f4;
+  --color-cream: #fff8f1;
+  --color-cream-deep: #fdeee0;
   --color-card: #ffffff;
-  --color-ink: #221a13;
-  --color-muted: #6b5f55;
-  --color-line: #eadfd5;
-  --color-primary: #c2410c;
+  --color-ink: #2a1d12;
+  --color-muted: #6b5d4f;
+  --color-line: #ecdfd1;
+  --color-primary: #d6440a;
   --color-primary-deep: #9a3412;
-  --color-primary-soft: #ffedd5;
+  --color-primary-soft: #ffe9d6;
+  --color-accent: #0f7d6b;
+  --color-accent-soft: #d7f1eb;
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+
+  --shadow-card: 0 1px 2px rgba(42, 29, 18, 0.04), 0 8px 24px -12px rgba(42, 29, 18, 0.18);
+  --shadow-pop: 0 2px 6px rgba(42, 29, 18, 0.08), 0 18px 40px -16px rgba(214, 68, 10, 0.3);
+
+  --animate-rise: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+  --animate-pop-in: pop-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-float: float 7s ease-in-out infinite;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 150% 0;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
 }
 
 html {
@@ -17,7 +69,48 @@ html {
 }
 
 body {
-  background: var(--color-cream);
+  background:
+    radial-gradient(120% 60% at 50% -10%, var(--color-cream-deep) 0%, transparent 60%),
+    var(--color-cream);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/* Result cards enter staggered; --i is set inline per card. */
+.stagger {
+  animation: var(--animate-rise);
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-line) 25%,
+    color-mix(in srgb, var(--color-line) 40%, white) 50%,
+    var(--color-line) 75%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+.press {
+  transition:
+    transform 0.12s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

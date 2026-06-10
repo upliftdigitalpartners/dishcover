@@ -181,6 +181,8 @@ export const MOOD_KEYS = Object.keys(DISCOVERY.moods) as Mood[];
 
 interface DietaryConfig {
   label: string;
+  /** Decorative — always rendered aria-hidden. */
+  emoji: string;
   /** Term injected into the Places Text Search query when this need is active. */
   searchTerm: string;
   /** Name substrings that signal this accommodation (lowercase). */
@@ -197,24 +199,28 @@ interface DietaryConfig {
 export const DIETARY: Record<Dietary, DietaryConfig> = {
   halal: {
     label: "Halal",
+    emoji: "☪️",
     searchTerm: "halal",
     keywords: ["halal"],
     types: [],
   },
   kosher: {
     label: "Kosher",
+    emoji: "✡️",
     searchTerm: "kosher",
     keywords: ["kosher", "glatt"],
     types: [],
   },
   vegetarian: {
     label: "Vegetarian",
+    emoji: "🥦",
     searchTerm: "vegetarian",
     keywords: ["vegetarian", "veggie", "plant-based", "plant based"],
     types: ["vegetarian_restaurant", "vegan_restaurant"],
   },
   vegan: {
     label: "Vegan",
+    emoji: "🌱",
     searchTerm: "vegan",
     keywords: ["vegan", "plant-based", "plant based"],
     types: ["vegan_restaurant"],

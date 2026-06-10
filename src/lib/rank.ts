@@ -1,5 +1,5 @@
 import { DISCOVERY, isKnownChain } from "./config";
-import type { Budget, Candidate, Mood } from "./types";
+import type { Budget, Candidate, Dietary, Mood } from "./types";
 
 export function haversineMeters(
   lat1: number,
@@ -45,8 +45,18 @@ function moodFitScore(candidate: Candidate, mood: Mood): number {
   return clamp01(fit);
 }
 
-function passesHardFilters(candidate: Candidate, mood: Mood, budget: Budget): boolean {
+function passesHardFilters(
+  candidate: Candidate,
+  mood: Mood,
+  budget: Budget,
+  dietary: Dietary[],
+): boolean {
   const cfg = DISCOVERY.moods[mood];
+
+  // Dietary needs are non-negotiable. mockNearby/searchDietary already constrain
+  // upstream; this is the deterministic safety net that guarantees every shown
+  // card carries every requested accommodation.
+  if (!dietary.every((need) => candidate.dietary.includes(need))) return false;
 
   // Open now is the default promise of the app; unknown (null) gets the benefit
   // of the doubt so sparse data doesn't empty the results.
@@ -78,12 +88,13 @@ export function rankCandidates(
   budget: Budget,
   origin: { lat: number; lng: number },
   radiusMeters: number,
+  dietary: Dietary[] = [],
 ): RankedCandidate[] {
   const cfg = DISCOVERY.moods[mood];
   const { weights } = DISCOVERY;
 
   const ranked = candidates
-    .filter((c) => passesHardFilters(c, mood, budget))
+    .filter((c) => passesHardFilters(c, mood, budget, dietary))
     .map((c) => {
       const distanceMeters = haversineMeters(origin.lat, origin.lng, c.lat, c.lng);
 

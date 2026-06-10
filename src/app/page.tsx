@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BudgetPicker } from "@/components/BudgetPicker";
+import { DietaryPicker } from "@/components/DietaryPicker";
 import { DistancePicker } from "@/components/DistancePicker";
 import { LocationField, type LocationStatus } from "@/components/LocationField";
+import { Logo } from "@/components/Logo";
 import { MoodChips } from "@/components/MoodChips";
 import { ResultCard } from "@/components/ResultCard";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import { DemoBanner, EmptyState, ErrorState, WidenedNotice } from "@/components/StatusStates";
 import { DISCOVERY } from "@/lib/config";
-import type { Budget, DiscoverResult, Mood } from "@/lib/types";
+import type { Budget, Dietary, DiscoverResult, Mood } from "@/lib/types";
 
 type ResultsPhase = "idle" | "loading" | "results" | "empty" | "error";
 type ViewMode = "list" | "one";
@@ -24,6 +26,7 @@ export default function Home() {
   const [mood, setMood] = useState<Mood | null>(null);
   const [budget, setBudget] = useState<Budget>(2);
   const [radius, setRadius] = useState<number>(DISCOVERY.defaultRadiusMeters);
+  const [dietary, setDietary] = useState<Dietary[]>([]);
 
   const [phase, setPhase] = useState<ResultsPhase>("idle");
   const [result, setResult] = useState<DiscoverResult | null>(null);
@@ -50,6 +53,9 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    // Kick off the geolocation request once on mount; the synchronous status
+    // set is intentional (and matches the initial "requesting" state).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     requestLocation();
   }, [requestLocation]);
 
@@ -62,7 +68,7 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query }),
       });
-      const data = (await response.json()) as {
+      const data = (await response.json().catch(() => ({}))) as {
         lat?: number;
         lng?: number;
         label?: string;
@@ -93,10 +99,12 @@ export default function Home() {
         const response = await fetch("/api/discover", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...coords, mood, budget, radiusMeters: radius }),
+          body: JSON.stringify({ ...coords, mood, budget, radiusMeters: radius, dietary }),
         });
-        const data = (await response.json()) as DiscoverResult & { error?: string };
-        if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as DiscoverResult & {
+          error?: string;
+        };
+        if (!response.ok || !Array.isArray(data.cards)) {
           setErrorMessage(data.error ?? null);
           setPhase("error");
           return;
@@ -108,7 +116,7 @@ export default function Home() {
         setPhase("error");
       }
     },
-    [coords, mood, budget, radius],
+    [coords, mood, budget, radius, dietary],
   );
 
   useEffect(() => {
@@ -124,8 +132,8 @@ export default function Home() {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pb-16 pt-8">
       <header className="mb-6">
-        <h1 className="text-3xl font-black tracking-tight text-primary-deep">Dishcover</h1>
-        <p className="mt-1 text-sm text-muted">
+        <Logo />
+        <p className="mt-2 text-sm text-muted">
           What to eat near you — decided in 30 seconds.
         </p>
       </header>
@@ -148,6 +156,7 @@ export default function Home() {
 
         <MoodChips value={mood} onChange={setMood} />
         <BudgetPicker value={budget} onChange={setBudget} />
+        <DietaryPicker value={dietary} onChange={setDietary} />
         <DistancePicker value={radius} onChange={setRadius} />
 
         <div className="space-y-2 pt-1">
@@ -155,9 +164,18 @@ export default function Home() {
             type="button"
             disabled={!ready || loading}
             onClick={() => find("list")}
-            className="min-h-12 w-full rounded-2xl bg-primary text-base font-bold text-white transition-colors hover:bg-primary-deep disabled:opacity-40"
+            className="press flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-base font-bold text-white shadow-pop hover:bg-primary-deep disabled:opacity-40 disabled:shadow-none"
           >
-            {loading ? "Finding food…" : "Find food"}
+            {loading ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                Finding food…
+              </>
+            ) : (
+              <>
+                <span aria-hidden>🍴</span> Find food
+              </>
+            )}
           </button>
           <button
             type="button"
@@ -169,9 +187,9 @@ export default function Home() {
                 void find("one");
               }
             }}
-            className="min-h-11 w-full rounded-2xl border border-line bg-card text-sm font-semibold text-ink transition-colors hover:border-primary disabled:opacity-40"
+            className="press min-h-11 w-full rounded-2xl border border-line bg-card text-sm font-semibold text-ink hover:border-primary disabled:opacity-40"
           >
-            Just pick one for me
+            ✨ Just pick one for me
           </button>
           {!ready && (
             <p className="text-center text-xs text-muted">
@@ -215,7 +233,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={() => setViewMode("list")}
-                    className="min-h-11 w-full rounded-2xl border border-line bg-card text-sm font-semibold transition-colors hover:border-primary"
+                    className="press min-h-11 w-full rounded-2xl border border-line bg-card text-sm font-semibold hover:border-primary"
                   >
                     Show me others
                   </button>
@@ -228,8 +246,8 @@ export default function Home() {
                     ? "The match nearby"
                     : `Top ${result.cards.length} nearby`}
                 </h2>
-                {result.cards.map((card) => (
-                  <ResultCard key={card.placeId} card={card} />
+                {result.cards.map((card, i) => (
+                  <ResultCard key={card.placeId} card={card} index={i} />
                 ))}
               </>
             )}

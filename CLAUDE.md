@@ -29,9 +29,10 @@ See `.env.example`. `GOOGLE_PLACES_API_KEY`, `GROQ_API_KEY`, `GROQ_MODEL` (defau
 ## Architecture
 
 One screen (`src/app/page.tsx`) → `POST /api/discover` → pipeline in `src/lib/discover.ts`:
-Nearby Search (≤20 candidates) → mood/budget/rating filter + weighted ranking (`src/lib/rank.ts`, config in `src/lib/config.ts`) → top 5 → per-place: Supabase `place_insights` read-through (fresh < 30 days) else Place Details (reviews) + Groq extraction + upsert → 3–5 cards.
+Nearby Search (≤20 candidates) → mood/budget/rating/dietary filter + weighted ranking (`src/lib/rank.ts`, config in `src/lib/config.ts`) → top 5 → per-place: Supabase `place_insights` read-through (fresh < 30 days) else Place Details (reviews) + Groq extraction + upsert → 3–5 cards.
 
-- Mood mapping + ranking weights + known-chain exclusion list: **one exported config object** in `src/lib/config.ts` — tweak there, nowhere else.
+- **Dietary needs** (halal/kosher/vegetarian/vegan, optional multi-select) are in scope. When any are set, real-mode discovery uses Text Search (`searchDietary`, query carries the dietary terms — Google's relevance matches them from listings + reviews) instead of Nearby Search; `rank.ts` then hard-filters so every shown card carries every requested need. Per-place dietary signals come from name/type detection (`detectDietary`) + Groq (`dietary` field, only when reviews explicitly confirm — never inferred from cuisine). Config lives in the `DIETARY` object in `src/lib/config.ts`.
+- Mood mapping + ranking weights + known-chain exclusion list + dietary config: **one exported config object** in `src/lib/config.ts` — tweak there, nowhere else.
 - All external fetches go through `fetchWithTimeout` (`src/lib/http.ts`); a failed dish extraction must never fail the whole response — degrade to a card without "Order this".
 - Per-place work runs in `Promise.all`; fewer than 3 results → auto-widen radius once and label it.
 
@@ -53,12 +54,12 @@ Nearby Search (≤20 candidates) → mood/budget/rating filter + weighted rankin
 
 ## Supabase conventions
 
-- `place_insights` is a **permanent, growing dataset (the moat)** — never delete rows, only refresh stale ones (>30 days). Access only from server code via service role key.
-- Migrations live in `supabase/migrations/`; the user runs them manually in the Supabase SQL editor — never attempt to run them.
+- `place_insights` is a **permanent, growing dataset (the moat)** — never delete rows, only refresh stale ones (>30 days). Access only from server code via service role key. Columns include a `dietary` jsonb array.
+- Migrations live in `supabase/migrations/` (`001` base table, `002` dietary column); the user runs them manually in the Supabase SQL editor — never attempt to run them. Missing table/column degrades gracefully (re-extract each time, no caching) — it never throws.
 
 ## Scope guardrails (v1 — flag before building if asked)
 
-NO: accounts/auth, reservations, saved favorites, embedded maps, review browsing, social features, multi-language, admin panel. Result count is 3–5, never more.
+NO: accounts/auth, reservations, saved favorites, embedded maps, review browsing, social features, multi-language, admin panel. Result count is 3–5, never more. (Dietary filtering IS in scope.)
 
 ## Quality bar
 

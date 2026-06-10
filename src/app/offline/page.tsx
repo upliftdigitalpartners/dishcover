@@ -15,9 +15,13 @@ export default function OfflinePage() {
         Dishcover needs a connection to find food nearby. Reconnect and try again — the
         restaurants will still be hungry for you.
       </p>
+      {/* Intentional full-page navigation: when reconnecting we want a real
+          network load, not client-side routing that could re-serve the cached
+          offline shell. */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a
         href="/"
-        className="mt-6 flex min-h-12 w-full items-center justify-center rounded-2xl bg-primary px-4 text-base font-bold text-white transition-colors hover:bg-primary-deep"
+        className="press mt-6 flex min-h-12 w-full items-center justify-center rounded-2xl bg-primary px-4 text-base font-bold text-white hover:bg-primary-deep"
       >
         Retry
       </a>

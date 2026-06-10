@@ -18,6 +18,7 @@ interface InsightsRow {
   name: string;
   dishes: unknown;
   vibe: string | null;
+  dietary: unknown;
   price_level: number | null;
   updated_at: string;
 }
@@ -46,13 +47,14 @@ function isFresh(updatedAt: string): boolean {
 function rowToInsights(row: InsightsRow): Insights {
   // jsonb came from us, but it's still external state — gate it like LLM output.
   const dishes = extractionSchema.shape.dishes.parse(row.dishes);
-  return { dishes, vibe: row.vibe };
+  const dietary = extractionSchema.shape.dietary.parse(row.dietary ?? []);
+  return { dishes, vibe: row.vibe, dietary };
 }
 
 async function readRow(placeId: string): Promise<InsightsRow | null> {
   const { data, error } = await supabase()
     .from("place_insights")
-    .select("place_id,name,dishes,vibe,price_level,updated_at")
+    .select("place_id,name,dishes,vibe,dietary,price_level,updated_at")
     .eq("place_id", placeId)
     .maybeSingle<InsightsRow>();
   if (error) {
@@ -68,6 +70,9 @@ async function upsertRow(candidate: Candidate, insights: Insights): Promise<void
     name: candidate.name,
     dishes: insights.dishes,
     vibe: insights.vibe,
+    // Store the union of what the reviews confirmed and what the place's own
+    // name/types signal, so the badge survives even on a future cache hit.
+    dietary: [...new Set([...insights.dietary, ...candidate.dietary])],
     price_level: candidate.priceLevel,
     updated_at: new Date().toISOString(),
   });
@@ -111,5 +116,6 @@ export async function getStoredInsights(candidate: Candidate): Promise<Insights>
       // fall through
     }
   }
-  return { dishes: [], vibe: null };
+  // No dishes, but the place's own name/types may still justify a badge.
+  return { dishes: [], vibe: null, dietary: candidate.dietary };
 }

@@ -25,9 +25,9 @@ export function DistancePicker({ value, onChange }: Props) {
               type="button"
               aria-pressed={selected}
               onClick={() => onChange(meters)}
-              className={`min-h-11 rounded-xl border text-sm font-semibold transition-colors ${
+              className={`press min-h-11 rounded-xl border text-sm font-semibold ${
                 selected
-                  ? "border-primary bg-primary text-white"
+                  ? "border-primary bg-primary text-white shadow-sm"
                   : "border-line bg-card text-ink hover:border-primary"
               }`}
             >

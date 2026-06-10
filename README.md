@@ -4,6 +4,8 @@ A mobile-first PWA for travelers standing hungry in an unfamiliar city. Pick a *
 
 Answer engine, not search engine: Dishcover reads the reviews so you don't have to. Under each restaurant it shows *"Order this: birria tacos ($9) · pad thai ($12)"*, extracted from real review text.
 
+Optional **dietary filters** — Halal, Kosher, Vegetarian, Vegan — narrow results to places that meet the need (matched via Google's listing + review relevance) and each match shows a trust badge.
+
 ## Try it with zero keys
 
 The app runs in **mock mode** out of the box — no API keys needed. It serves ~8 realistic fixture restaurants with a "demo data" banner so you can exercise the entire UI.
@@ -40,7 +42,7 @@ Cost notes: the app uses tight field masks (Nearby Search bills Enterprise, ~$35
 ### 3. Supabase
 
 1. Create a project at [supabase.com](https://supabase.com/).
-2. **SQL Editor →** paste and run the contents of [supabase/migrations/001_place_insights.sql](supabase/migrations/001_place_insights.sql).
+2. **SQL Editor →** run both migrations in order: [001_place_insights.sql](supabase/migrations/001_place_insights.sql) then [002_place_insights_dietary.sql](supabase/migrations/002_place_insights_dietary.sql). (Until they're run, the app still works — it just re-extracts every time instead of caching.)
 3. **Settings → API:** copy the **Project URL** into `SUPABASE_URL` and the **service_role** key (not the anon key) into `SUPABASE_SERVICE_ROLE_KEY`.
 
 All keys are server-side only and never reach the browser.
@@ -65,8 +67,9 @@ npm run lint    # ESLint
 1. **Install prompt:** open the deployed URL in Chrome (Android) → ⋮ → *Add to Home screen* shows the Dishcover icon; on iOS Safari → Share → *Add to Home Screen*. Launching from the icon opens standalone (no browser chrome).
 2. **Location flow:** allow location → "Your location" appears. Then in a private tab, deny it → the "Where are you?" text input appears; type a neighborhood and Set.
 3. **Happy path:** pick *Local & authentic* + `$$` → **Find food** → skeleton cards, then 3–5 results, each with rating, price level, walk time, an "Order this" line with prices, a why-line, and a working **Directions** link into Google Maps.
-4. **Just pick one:** tap it → exactly one highlighted card with *Show me others* underneath.
-5. **Auto-widen:** pick *Treat yourself* + `$$$$` on the 10-min walk setting → expect the "Widened search to a 25-min walk" notice.
-6. **Empty state:** pick a contradictory combo (*Treat yourself* + `$`) → friendly "Nothing open matches" message, no blank screen.
-7. **Offline:** turn on airplane mode, relaunch from the home-screen icon → the "You're offline" page appears (production/deployed only).
-8. **Mock banner:** if any key is missing, every result set carries the "Demo data" banner.
+4. **Dietary filter:** select *Halal* (and/or Kosher/Vegetarian/Vegan) → results narrow to matching places, each with a green dietary badge. Deselect to broaden again.
+5. **Just pick one:** tap it → exactly one highlighted card with *Show me others* underneath.
+6. **Auto-widen:** pick *Treat yourself* + `$$$$` on the 10-min walk setting → expect the "Widened search to a 25-min walk" notice.
+7. **Empty state:** pick a contradictory combo (*Treat yourself* + `$`) → friendly "Nothing open matches" message, no blank screen.
+8. **Offline:** turn on airplane mode, relaunch from the home-screen icon → the "You're offline" page appears (production/deployed only).
+9. **Mock banner:** if any key is missing, every result set carries the "Demo data" banner.
