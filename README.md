@@ -60,7 +60,25 @@ npm run lint    # ESLint
 
 1. Push the repo to GitHub and import it in Vercel (defaults are fine — Next.js is auto-detected).
 2. **Project → Settings → Environment Variables:** add `GOOGLE_PLACES_API_KEY`, `GROQ_API_KEY`, `GROQ_MODEL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` for Production (and Preview if you want real data there). Missing keys = mock mode, deliberately.
-3. Deploy. No `maxDuration` config is needed — the discover route finishes in a few seconds and Vercel's default function duration is generous.
+3. Deploy. The discover route declares `maxDuration = 30` so a slow search plus five review extractions can't be cut off by the platform's default 10s function limit (a gateway timeout would reach the browser as an unexplained failure).
+
+## Troubleshooting: "That didn't work"
+
+Open **`/api/health`** on the deployed URL. It reports which env vars are set (booleans only — never values) and calls each provider, so the failure names itself:
+
+```jsonc
+{"mode": "live", "ok": false,
+ "checks": {"places": {"ok": false, "kind": "denied", "status": 403,
+                       "detail": "PERMISSION_DENIED: Requests from referer <empty> are blocked."}}}
+```
+
+- `"mode": "mock"` — a key is missing, so the app is serving fixtures. The `env` booleans say which one.
+- **places `denied`** — the key is the problem, and retrying won't help. Almost always one of: the key has *HTTP referrer* restrictions (those reject server-side calls — use *IP addresses* or no application restriction), **Places API (New)** isn't enabled on the project, or billing is off.
+- **places `quota`** — rate limited; it clears on its own.
+- **places `upstream` / `timeout` / `network`** — transient. Each search already retries once automatically.
+- **groq / supabase failures** don't break search: cards render without the "Order this" line. A supabase error mentioning `place_insights` or `dietary` means a migration hasn't been run yet.
+
+The same classification rides along on a failed search as `reason` (e.g. `places_denied`) in the `/api/discover` response.
 
 ## Manual test checklist (on your phone)
 

@@ -15,7 +15,7 @@ export interface Env {
   supabaseServiceRoleKey: string;
 }
 
-const REQUIRED = [
+export const REQUIRED_ENV_VARS = [
   "GOOGLE_PLACES_API_KEY",
   "GROQ_API_KEY",
   "SUPABASE_URL",
@@ -24,12 +24,12 @@ const REQUIRED = [
 
 /** Mock mode: any required key missing → serve fixtures, show the demo banner. */
 export function isMockMode(): boolean {
-  return REQUIRED.some((key) => !process.env[key]?.trim());
+  return REQUIRED_ENV_VARS.some((key) => !process.env[key]?.trim());
 }
 
 /** Only call when isMockMode() is false. */
 export function getEnv(): Env {
-  const missing = REQUIRED.filter((key) => !process.env[key]?.trim());
+  const missing = REQUIRED_ENV_VARS.filter((key) => !process.env[key]?.trim());
   if (missing.length > 0) {
     throw new Error(`Missing required env vars: ${missing.join(", ")}`);
   }

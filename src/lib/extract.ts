@@ -33,6 +33,23 @@ Rules:
 - "dietary": a subset of ["halal","kosher","vegetarian","vegan"]. Include a value ONLY when the reviews explicitly and confidently state that accommodation (e.g. a reviewer says "fully halal" or "great vegan options"). Never infer it from cuisine alone — an empty array is the correct, safe answer when unsure. This drives a trust badge, so false positives are harmful.
 - If no specific dishes are praised, return {"dishes": [], "vibe": ..., "dietary": [...]}.`;
 
+/**
+ * Key + model check for /api/health. GET /models/{id} is free and unmetered,
+ * and a wrong GROQ_MODEL fails it just as loudly as a wrong key. Throws with
+ * the provider's own message — this is the one path here that may throw.
+ */
+export async function pingGroq(): Promise<void> {
+  const env = getEnv();
+  const response = await fetchWithTimeout(
+    `${BASE_URL}/models/${encodeURIComponent(env.groqModel)}`,
+    { headers: { Authorization: `Bearer ${env.groqApiKey}` } },
+  );
+  if (!response.ok) {
+    const body = (await response.text().catch(() => "")).slice(0, 300);
+    throw new Error(`HTTP ${response.status}: ${body}`);
+  }
+}
+
 export async function extractDishes(
   restaurantName: string,
   reviews: string[],

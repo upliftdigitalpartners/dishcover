@@ -1,3 +1,4 @@
+import { describeApiFailure } from "@/lib/apiError";
 import { geocode } from "@/lib/discover";
 import { geocodeRequestSchema } from "@/lib/schemas";
 
@@ -16,12 +17,20 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const result = await geocode(parsed.data.query);
+    if (result === null) {
+      // The lookup worked; the query just didn't match anywhere.
+      return Response.json(
+        { error: "Couldn't find that place — try a nearby landmark or address.", reason: "no_match" },
+        { status: 404 },
+      );
+    }
     return Response.json(result);
   } catch (error) {
     console.error("geocode failed", error);
-    return Response.json(
-      { error: "Couldn't find that place — try a nearby landmark or address." },
-      { status: 500 },
+    const failure = describeApiFailure(
+      error,
+      "Couldn't look that up right now — please try again.",
     );
+    return Response.json(failure.body, { status: failure.status });
   }
 }

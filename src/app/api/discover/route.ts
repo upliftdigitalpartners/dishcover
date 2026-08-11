@@ -1,5 +1,14 @@
+import { describeApiFailure } from "@/lib/apiError";
 import { discover } from "@/lib/discover";
 import { discoverRequestSchema } from "@/lib/schemas";
+
+/**
+ * Real-mode discovery is a search plus up to five review fetches and LLM
+ * extractions. That fits comfortably in 30s but not in the 10s a serverless
+ * platform gives a function by default — and a gateway timeout would surface
+ * as an unexplained failure with no JSON body for the client to read.
+ */
+export const maxDuration = 30;
 
 export async function POST(request: Request): Promise<Response> {
   let body: unknown;
@@ -22,9 +31,7 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json(result);
   } catch (error) {
     console.error("discover failed", error);
-    return Response.json(
-      { error: "Couldn't search right now — please try again." },
-      { status: 500 },
-    );
+    const failure = describeApiFailure(error, "Couldn't search right now — please try again.");
+    return Response.json(failure.body, { status: failure.status });
   }
 }
