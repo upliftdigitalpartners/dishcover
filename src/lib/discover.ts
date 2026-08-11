@@ -118,13 +118,11 @@ export async function discover(input: DiscoverInput): Promise<DiscoverResult> {
   };
 }
 
-export async function geocode(query: string): Promise<GeocodeResult> {
+/** null = the query matched nothing (a 404, not a failure). */
+export async function geocode(query: string): Promise<GeocodeResult | null> {
   if (isMockMode()) {
     return { ...MOCK_LOCATION, mock: true };
   }
   const located = await geocodeText(query);
-  if (!located) {
-    throw new Error(`No geocode result for query: ${query}`);
-  }
-  return { ...located, mock: false };
+  return located === null ? null : { ...located, mock: false };
 }

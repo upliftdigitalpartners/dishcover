@@ -1,6 +1,6 @@
 import { detectDietary, DIETARY, DISCOVERY } from "./config";
 import { getEnv } from "./env";
-import { fetchWithTimeout } from "./http";
+import { DEFAULT_TIMEOUT_MS, fetchWithTimeout } from "./http";
 import type { Budget, Candidate, Dietary } from "./types";
 
 /**
@@ -44,6 +44,85 @@ const PRICE_LEVELS: Record<string, Budget> = {
   PRICE_LEVEL_VERY_EXPENSIVE: 4,
 };
 
+/**
+ * Why a Places call failed, in the only terms the caller can act on:
+ * - `denied`   — key rejected (restricted to referrers/IPs, API not enabled,
+ *                billing off). Config problem; retrying never helps.
+ * - `request`  — we sent something Google rejected (4xx). Our bug.
+ * - `quota`    — rate limited.
+ * - `upstream` — Google 5xx.
+ * - `timeout` / `network` — never got an answer.
+ */
+export type PlacesFailureKind =
+  | "denied"
+  | "request"
+  | "quota"
+  | "upstream"
+  | "timeout"
+  | "network";
+
+export class PlacesError extends Error {
+  readonly kind: PlacesFailureKind;
+  readonly status: number | null;
+  /** Google's own explanation, trimmed — the thing worth reading in a log. */
+  readonly detail: string;
+
+  constructor(kind: PlacesFailureKind, status: number | null, detail: string) {
+    super(`Places ${kind}${status === null ? "" : ` ${status}`}: ${detail}`);
+    this.name = "PlacesError";
+    this.kind = kind;
+    this.status = status;
+    this.detail = detail;
+  }
+
+  /** Config and request errors are permanent; the rest may heal on a retry. */
+  get transient(): boolean {
+    return this.kind !== "denied" && this.kind !== "request";
+  }
+}
+
+/** Google's error envelope: {error: {code, message, status}}. */
+function describeFailure(status: number, body: string): PlacesError {
+  let detail = body.slice(0, 300);
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string; status?: string } };
+    if (parsed.error?.message) {
+      detail = parsed.error.status
+        ? `${parsed.error.status}: ${parsed.error.message}`
+        : parsed.error.message;
+    }
+  } catch {
+    // Non-JSON body (a proxy or an HTML error page) — the raw text is the detail.
+  }
+
+  // A restricted key or a disabled API is a 403; an outright invalid one comes
+  // back as 400 INVALID_ARGUMENT. Both are "fix your key", not "fix the query".
+  if (status === 401 || status === 403 || /api key/i.test(detail)) {
+    return new PlacesError("denied", status, detail);
+  }
+  if (status === 429) return new PlacesError("quota", status, detail);
+  if (status >= 500) return new PlacesError("upstream", status, detail);
+  return new PlacesError("request", status, detail);
+}
+
+/** Node rejects a timed-out fetch with a TimeoutError; older runtimes wrap it. */
+function isTimeout(error: unknown): boolean {
+  const named = error as { name?: string; cause?: { name?: string } };
+  return named?.name === "TimeoutError" || named?.cause?.name === "TimeoutError";
+}
+
+/** Network failures hide the useful part (DNS, TLS, ECONNREFUSED) in `cause`. */
+function describeNetworkError(error: unknown): string {
+  const cause = (error as { cause?: unknown }).cause;
+  return cause ? `${String(error)} (${String(cause)})` : String(error);
+}
+
+const RETRY_DELAY_MS = 300;
+/** Second attempt gets a tighter budget so a slow upstream can't stall the request. */
+const RETRY_TIMEOUT_MS = 4000;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 interface RawPlace {
   id?: string;
   displayName?: { text?: string };
@@ -58,25 +137,73 @@ interface RawPlace {
   reviews?: { text?: { text?: string }; rating?: number }[];
 }
 
+type PlacesInit = { method: "GET" } | { method: "POST"; body: unknown };
+
+async function attempt(
+  path: string,
+  fieldMask: string,
+  init: PlacesInit,
+  timeoutMs: number,
+): Promise<unknown> {
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(
+      `${BASE}${path}`,
+      {
+        method: init.method,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": getEnv().googlePlacesApiKey,
+          "X-Goog-FieldMask": fieldMask,
+        },
+        ...(init.method === "POST" ? { body: JSON.stringify(init.body) } : {}),
+      },
+      timeoutMs,
+    );
+  } catch (error) {
+    // A timeout or DNS/TLS/socket trouble — no status code was ever returned.
+    throw isTimeout(error)
+      ? new PlacesError("timeout", null, `no response within ${timeoutMs}ms`)
+      : new PlacesError("network", null, describeNetworkError(error));
+  }
+
+  if (!response.ok) {
+    throw describeFailure(response.status, await response.text().catch(() => ""));
+  }
+  return response.json();
+}
+
+/**
+ * Every Places call goes through here. One retry on transient failures — a
+ * cold-start timeout or a single 5xx shouldn't cost the user their answer —
+ * and no retry on a rejected key, which would only burn latency.
+ */
 async function placesFetch(
   path: string,
   fieldMask: string,
-  init: { method: "GET" } | { method: "POST"; body: unknown },
+  init: PlacesInit,
 ): Promise<unknown> {
-  const response = await fetchWithTimeout(`${BASE}${path}`, {
-    method: init.method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": getEnv().googlePlacesApiKey,
-      "X-Goog-FieldMask": fieldMask,
-    },
-    ...(init.method === "POST" ? { body: JSON.stringify(init.body) } : {}),
-  });
-  if (!response.ok) {
-    const detail = (await response.text().catch(() => "")).slice(0, 300);
-    throw new Error(`Places API ${init.method} ${path} → ${response.status}: ${detail}`);
+  try {
+    return await attempt(path, fieldMask, init, DEFAULT_TIMEOUT_MS);
+  } catch (error) {
+    if (!(error instanceof PlacesError) || !error.transient) throw error;
+    console.warn(`Places ${init.method} ${path} failed, retrying once —`, error.message);
+    await sleep(RETRY_DELAY_MS);
+    return attempt(path, fieldMask, init, RETRY_TIMEOUT_MS);
   }
-  return response.json();
+}
+
+/**
+ * Cheapest possible proof that the key works: Text Search with an ID-only
+ * field mask (Google's free tier). Used by /api/health, never by discovery.
+ */
+export async function pingPlaces(): Promise<void> {
+  await attempt(
+    "/places:searchText",
+    "places.id",
+    { method: "POST", body: { textQuery: "restaurant", pageSize: 1 } },
+    DEFAULT_TIMEOUT_MS,
+  );
 }
 
 function toCandidate(place: RawPlace): Candidate | null {

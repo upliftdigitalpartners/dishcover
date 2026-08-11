@@ -82,6 +82,15 @@ async function upsertRow(candidate: Candidate, insights: Insights): Promise<void
 }
 
 /**
+ * Table + column check for /api/health: selecting `dietary` proves migration
+ * 002 ran, not just 001. Throws with Postgres' own message.
+ */
+export async function pingStore(): Promise<void> {
+  const { error } = await supabase().from("place_insights").select("place_id,dietary").limit(1);
+  if (error) throw new Error(error.message);
+}
+
+/**
  * Fresh row → use it (no Places Details, no Groq). Otherwise extract and
  * upsert. A failed extraction (null) is never persisted — a stale row beats
  * nothing, and nothing beats caching a transient failure for 30 days.
