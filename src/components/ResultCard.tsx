@@ -52,7 +52,11 @@ export function ResultCard({ card, highlight = false, index = 0 }: Props) {
   return (
     <article
       style={{ "--i": index } as React.CSSProperties}
-      className={`stagger rounded-2xl border bg-card p-4 shadow-card ${
+      className={`stagger ${
+        // Later cards start below the fold — let scroll progress drive their
+        // entrance where animation-timeline is supported (.view-rise wins).
+        index >= 3 ? "view-rise " : ""
+      }rounded-2xl border bg-card p-4 shadow-card ${
         highlight ? "border-primary ring-1 ring-primary/30" : "border-line"
       }`}
     >

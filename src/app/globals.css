@@ -111,6 +111,57 @@ body {
   transform: scale(0.97);
 }
 
+/* ----- Scroll-driven effects (progressive enhancement: Chrome + Safari; ----
+   ----- browsers without animation-timeline keep the mount animations) ----- */
+
+@supports (animation-timeline: scroll()) {
+  @keyframes header-condense {
+    to {
+      transform: scale(0.94);
+      opacity: 0.8;
+    }
+  }
+  .header-condense {
+    transform-origin: left center;
+    animation-name: header-condense;
+    animation-duration: 1ms; /* progress comes from the scroll timeline */
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll();
+    animation-range: 0 180px;
+  }
+}
+
+/* Below-the-fold cards trade the mount stagger for a scroll-tracked rise.
+   Declared after .stagger so these longhands win when both classes apply. */
+@supports (animation-timeline: view()) {
+  .view-rise {
+    animation-name: rise;
+    animation-duration: 1ms; /* progress comes from the view timeline */
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation-fill-mode: both;
+    animation-delay: 0s;
+    animation-timeline: view();
+    animation-range: entry 5% entry 60%;
+  }
+}
+
+/* ----- WebGL backdrop: drifting warm blobs behind the top of the page.
+   The canvas sits above body's static gradient (its no-WebGL fallback)
+   and below all content; CSS masks it out toward the fold. ----- */
+.shader-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 55vh;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.85;
+  -webkit-mask-image: linear-gradient(to bottom, black 35%, transparent);
+  mask-image: linear-gradient(to bottom, black 35%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

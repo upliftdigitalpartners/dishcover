@@ -10,6 +10,7 @@ import { LocationField, type LocationStatus } from "@/components/LocationField";
 import { Logo } from "@/components/Logo";
 import { MoodChips } from "@/components/MoodChips";
 import { ResultCard } from "@/components/ResultCard";
+import { ShaderBackdrop } from "@/components/ShaderBackdrop";
 import { SkeletonCard } from "@/components/SkeletonCard";
 import { DemoBanner, EmptyState, ErrorState, WidenedNotice } from "@/components/StatusStates";
 import { DISCOVERY } from "@/lib/config";
@@ -149,7 +150,8 @@ export default function Home() {
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 pb-16 pt-8">
-      <header className="mb-6">
+      <ShaderBackdrop />
+      <header className="header-condense mb-6">
         <Logo />
         <p className="mt-2 text-sm text-muted">
           What to eat near you — decided in 30 seconds.

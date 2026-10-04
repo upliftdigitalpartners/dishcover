@@ -6,6 +6,23 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev", "--", "-p", "3900"],
       "port": 3900
+    },
+    {
+      "name": "dishcover-mock",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "GOOGLE_PLACES_API_KEY=",
+        "GROQ_API_KEY=",
+        "SUPABASE_URL=",
+        "SUPABASE_SERVICE_ROLE_KEY=",
+        "npm",
+        "run",
+        "dev",
+        "--",
+        "-p",
+        "3901"
+      ],
+      "port": 3901
     }
   ]
 }
