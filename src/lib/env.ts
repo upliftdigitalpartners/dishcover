@@ -36,7 +36,7 @@ export function getEnv(): Env {
   return {
     googlePlacesApiKey: process.env.GOOGLE_PLACES_API_KEY!,
     groqApiKey: process.env.GROQ_API_KEY!,
-    groqModel: process.env.GROQ_MODEL?.trim() || "llama-3.3-70b-versatile",
+    groqModel: process.env.GROQ_MODEL?.trim() || "openai/gpt-oss-120b",
     supabaseUrl: process.env.SUPABASE_URL!,
     supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
   };

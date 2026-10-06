@@ -37,7 +37,7 @@ Cost notes: the app uses tight field masks (Nearby Search bills Enterprise, ~$35
 ### 2. Groq
 
 1. Create a key at [console.groq.com](https://console.groq.com/) → API Keys.
-2. Set `GROQ_API_KEY`. Leave `GROQ_MODEL=llama-3.3-70b-versatile` (free tier: ~1,000 requests/day — plenty, since each restaurant is extracted at most once per 30 days thanks to the insights store).
+2. Set `GROQ_API_KEY`. Leave `GROQ_MODEL=openai/gpt-oss-120b` (the free tier allows plenty, since each restaurant is extracted at most once per 30 days thanks to the insights store). If Groq ever retires a model, `/api/health` will show a `model_not_found` error — pick a current one from [console.groq.com/docs/models](https://console.groq.com/docs/models) and update `GROQ_MODEL`.
 
 ### 3. Supabase
 

@@ -22,7 +22,7 @@ Dependencies are intentionally minimal: next, react, react-dom, @supabase/supaba
 
 ## Env vars (all server-side only — none may ever reach the browser; no `NEXT_PUBLIC_` prefix)
 
-See `.env.example`. `GOOGLE_PLACES_API_KEY`, `GROQ_API_KEY`, `GROQ_MODEL` (default `llama-3.3-70b-versatile`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
+See `.env.example`. `GOOGLE_PLACES_API_KEY`, `GROQ_API_KEY`, `GROQ_MODEL` (default `openai/gpt-oss-120b`), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
 
 **Mock mode:** if any required key is missing at runtime, the app serves ~8 fixture restaurants from `src/lib/fixtures.ts` and shows a "demo data" banner. The full UI must always work with zero keys. Mock-mode detection lives in `src/lib/env.ts`.
 
@@ -49,8 +49,8 @@ Nearby Search (≤20 candidates) → mood/budget/rating/dietary filter + weighte
 
 ## Groq conventions
 
-- `POST https://api.groq.com/openai/v1/chat/completions`, `response_format: {type: "json_object"}` (the word "JSON" must appear in the prompt), `temperature: 0`.
-- `json_schema`/structured outputs are NOT supported on llama-3.3-70b-versatile — json_object + zod validation is the contract. On parse/validation failure return empty dishes; never throw upward.
+- `POST https://api.groq.com/openai/v1/chat/completions`, `response_format: {type: "json_object"}` (the word "JSON" must appear in the prompt), `temperature: 0`, `reasoning_effort: "low"` + roomy `max_tokens` (gpt-oss is a reasoning model — thinking spends completion tokens).
+- Default model is `openai/gpt-oss-120b` (llama-3.3-70b-versatile was retired by Groq, Oct 2026 — it 404s). json_object + zod validation is the contract regardless of model. On parse/validation failure return empty dishes; never throw upward.
 - `src/lib/extract.ts` is provider-agnostic: swapping providers = base URL + key + model, one file.
 
 ## Supabase conventions

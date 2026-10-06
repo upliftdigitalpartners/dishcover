@@ -76,7 +76,10 @@ export async function extractDishes(
         body: JSON.stringify({
           model: env.groqModel,
           temperature: 0,
-          max_tokens: 600,
+          // Reasoning models spend completion tokens thinking before the JSON;
+          // keep the effort low and the budget roomy so output never truncates.
+          max_tokens: 1024,
+          reasoning_effort: "low",
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
